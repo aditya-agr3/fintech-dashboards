@@ -3,6 +3,13 @@ import { YahooFinanceData } from '../types/index.js';
 import { toYahooSymbol } from '../utils/helpers.js';
 import { CACHE_KEYS, getFromCache, setInCache } from '../utils/cache.js';
 
+// Type for Yahoo Finance quote response
+interface YahooQuoteResult {
+  regularMarketPrice?: number;
+  symbol?: string;
+  [key: string]: unknown;
+}
+
 /**
  * Yahoo Finance Service
  * 
@@ -29,13 +36,11 @@ export async function fetchStockCMP(nseCode: string): Promise<YahooFinanceData> 
   const yahooSymbol = toYahooSymbol(nseCode);
   
   try {
-    const quote = await yahooFinance.quote(yahooSymbol, {
-      fields: ['regularMarketPrice', 'symbol'],
-    });
+    const quote = await yahooFinance.quote(yahooSymbol) as YahooQuoteResult;
     
     const result: YahooFinanceData = {
       symbol: nseCode,
-      cmp: quote.regularMarketPrice ?? null,
+      cmp: quote?.regularMarketPrice ?? null,
     };
     
     // Cache the result
@@ -95,7 +100,7 @@ export async function validateSymbol(nseCode: string): Promise<boolean> {
   const yahooSymbol = toYahooSymbol(nseCode);
   
   try {
-    const result = await yahooFinance.quote(yahooSymbol);
+    const result = await yahooFinance.quote(yahooSymbol) as YahooQuoteResult | null;
     return result !== null && result !== undefined;
   } catch {
     return false;
